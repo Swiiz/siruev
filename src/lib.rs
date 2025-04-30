@@ -222,14 +222,13 @@ pub fn emit<'a, E: Event<'a> + Clone>(event: E) -> usize {
 /// [`Event`]: crate::Event
 /// [`emit`]: crate::emit
 pub fn emit_mut<'a, E: Event<'a> + 'static>(event: &mut E) -> usize {
+    type Lt<'a, 'b, E> = <&'a mut E as Event<'b>>::ForLt;
     HANDLERS
-        .get(&typeid::ConstTypeId::of::<
-            <<&mut E as Event>::ForLt as ForLt>::Of<'a>,
-        >())
+        .get(&typeid::ConstTypeId::of::<<Lt<E> as ForLt>::Of<'a>>())
         .map_or(0, |handlers| {
             handlers
                 .into_iter()
-                .map(|s| run_system::<<&mut E as Event>::ForLt>(s, event))
+                .map(|s| run_system::<Lt<E>>(s, event))
                 .count()
         })
 }
