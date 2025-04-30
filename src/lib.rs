@@ -254,6 +254,7 @@ mod sealed {
     impl<T> MaybeSyncIfFeature for T {}
 }
 
+#[cfg(feature = "parallel")]
 fn group_by_key<I, F, K, T>(iter: I, key_fn: F) -> Vec<Vec<T>>
 where
     I: IntoIterator<Item = T>,
