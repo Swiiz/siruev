@@ -1,4 +1,4 @@
-# SIRUEV - **Si**mple **Ru**st **Ev**ents
+# SIRUEV - **Si**mple **Ru**st **Ev**ents ([Docs](https://swiiz.github.io/siruev))
 
 `siruev` is a simple yet powerful event-system for Rust that enables you to define and handle events
 in a modular way, allowing for minimal coupling. It supports any event event handlers and allows the user to emit
