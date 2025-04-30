@@ -28,7 +28,7 @@ macro_rules! systems {
         $(
             $(
                 $crate::manual::submit!($crate::manual::Handler {
-                    event: typeid::ConstTypeId::of::<$event>(),
+                    event: $crate::manual::ConstTypeId::of::<$event>(),
                     system: $crate::manual::system::<<$event as $crate::Event>::ForLt>($crate::systems!(__priv $($priority)?), &$crate::manual::fn_cast(|e| $system(e))),
                 });
             )*
