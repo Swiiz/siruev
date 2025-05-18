@@ -152,7 +152,7 @@ fn run_system<'a, T: ForLt + 'static>(sys: &System, event: T::Of<'a>) {
 /// ## Parallel Execution
 /// If the `parallel` feature is enabled, handlers may be invoked concurrently
 /// using a `rayon`. Handlers must not share mutable state unless properly synchronized.
-/// Without this feature, handlers are invoked sequentially in random order.
+/// Without this feature, handlers are invoked sequentially in undefined order (other than priority).
 ///
 /// ## Returns
 /// The number of handlers that were invoked.
@@ -166,7 +166,6 @@ fn run_system<'a, T: ForLt + 'static>(sys: &System, event: T::Of<'a>) {
 ///
 /// [`Event`]: crate::Event
 /// [`emit_mut`]: crate::emit_mut
-//TODO: Make it work with priority+parallel and adjust doc
 pub fn emit<'a, E: Event<'a> + Clone>(event: E) -> usize {
     HANDLERS
         .get(&typeid::ConstTypeId::of::<<E::ForLt as ForLt>::Of<'a>>())
