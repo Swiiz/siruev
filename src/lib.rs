@@ -104,7 +104,7 @@ pub mod manual {
 /// - [`#[event_handler]`](crate::event_handler): Registers a function to handle events.
 ///
 /// [`emit`]: crate::emit
-pub trait Event<'a>: sealed::MaybeSyncIfFeature {
+pub trait Event<'a> {
     type ForLt: ForLt<Of<'a> = Self> + 'static;
 }
 
@@ -166,7 +166,10 @@ fn run_system<'a, T: ForLt + 'static>(sys: &System, event: T::Of<'a>) {
 ///
 /// [`Event`]: crate::Event
 /// [`emit_mut`]: crate::emit_mut
-pub fn emit<'a, E: Event<'a> + Clone>(event: E) -> usize {
+pub fn emit<'a, E: Event<'a> + Clone>(event: E) -> usize
+where
+    E: sealed::SyncIfFeature,
+{
     HANDLERS
         .get(&typeid::ConstTypeId::of::<<E::ForLt as ForLt>::Of<'a>>())
         .map_or(0, |handlers| {
@@ -242,14 +245,14 @@ impl<'a, T: Event<'a> + 'static> Event<'a> for &'a mut T {
 
 mod sealed {
     #[cfg(feature = "parallel")]
-    pub trait MaybeSyncIfFeature: Sync {}
+    pub trait SyncIfFeature: Sync {}
     #[cfg(feature = "parallel")]
-    impl<T: Sync> MaybeSyncIfFeature for T {}
+    impl<T: Sync> SyncIfFeature for T {}
 
     #[cfg(not(feature = "parallel"))]
     pub trait MaybeSyncIfFeature {}
     #[cfg(not(feature = "parallel"))]
-    impl<T> MaybeSyncIfFeature for T {}
+    impl<T> SyncIfFeature for T {}
 }
 
 #[cfg(feature = "parallel")]
