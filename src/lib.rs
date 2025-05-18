@@ -128,7 +128,7 @@ fn run_system<'a, T: ForLt + 'static>(sys: &System, event: T::Of<'a>) {
     (callback)(event);
 }
 
-mod sealed_sync {
+mod sealed_nonsync {
     use super::*;
     pub fn emit<'a, E: Event<'a> + Clone>(event: E) -> usize {
         HANDLERS
@@ -143,7 +143,7 @@ mod sealed_sync {
 }
 
 #[cfg(feature = "parallel")]
-pub use sealed_sync::emit as sync_emit;
+pub use sealed_nonsync::emit as emit_non_sync;
 
 /// Emits an event by value, invoking all registered handlers for its type.
 ///
@@ -188,7 +188,7 @@ where
     E: sealed::SyncIfFeature,
 {
     #[cfg(not(feature = "parallel"))]
-    return sealed_sync::emit(event);
+    return sealed_nonsync::emit_non_sync(event);
 
     #[cfg(feature = "parallel")]
     HANDLERS
