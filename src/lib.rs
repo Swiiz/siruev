@@ -128,6 +128,23 @@ fn run_system<'a, T: ForLt + 'static>(sys: &System, event: T::Of<'a>) {
     (callback)(event);
 }
 
+mod sealed_sync {
+    use super::*;
+    pub fn emit<'a, E: Event<'a> + Clone>(event: E) -> usize {
+        HANDLERS
+            .get(&typeid::ConstTypeId::of::<<E::ForLt as ForLt>::Of<'a>>())
+            .map_or(0, |handlers| {
+                return handlers
+                    .into_iter()
+                    .map(|s| run_system::<E::ForLt>(s, event.clone()))
+                    .count();
+            })
+    }
+}
+
+#[cfg(feature = "parallel")]
+pub use sealed_sync::emit as sync_emit;
+
 /// Emits an event by value, invoking all registered handlers for its type.
 ///
 /// This function dispatches the given event to all handlers registered for `E`,
@@ -170,17 +187,14 @@ pub fn emit<'a, E: Event<'a> + Clone>(event: E) -> usize
 where
     E: sealed::SyncIfFeature,
 {
+    #[cfg(not(feature = "parallel"))]
+    return sealed_sync::emit(event);
+
+    #[cfg(feature = "parallel")]
     HANDLERS
         .get(&typeid::ConstTypeId::of::<<E::ForLt as ForLt>::Of<'a>>())
         .map_or(0, |handlers| {
-            #[cfg(not(feature = "parallel"))]
-            return handlers
-                .into_iter()
-                .map(|s| run_system::<E::ForLt>(s, event.clone()))
-                .count();
-            #[cfg(feature = "parallel")]
             use rayon::iter::ParallelIterator;
-            #[cfg(feature = "parallel")]
             group_by_key(handlers, |h| h.priority)
                 .into_iter()
                 .fold(0, |count, i| {
