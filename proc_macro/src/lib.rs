@@ -209,3 +209,28 @@ impl Parse for HandlerMeta {
         })
     }
 }
+
+/// Derives [`State`](crate::State) for a type.
+///
+/// The type must not be public.            
+#[cfg(feature = "state")]
+#[proc_macro_derive(State)]
+pub fn state_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+
+    if matches!(input.vis, syn::Visibility::Public(_)) {
+        return syn::Error::new_spanned(&input.vis, "State cannot be public, use events instead")
+            .to_compile_error()
+            .into();
+    }
+
+    quote! {
+       impl siruev::manual::State for #name {
+            fn into_any(self: Box<Self>) -> Box<dyn Any> { self }
+            fn as_any(&self) -> &dyn Any { self }
+            fn as_any_mut(&mut self) -> &mut dyn Any { self }
+       }
+    }
+    .into()
+}

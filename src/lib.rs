@@ -71,6 +71,16 @@ pub mod manual {
     }
 
     inventory::collect!(Handler);
+
+    #[cfg(feature = "state")]
+    /// Types that can be used as state for event handlers.
+    ///
+    /// **⚠️ State must not be public.**
+    pub trait State: Any {
+        fn into_any(self: Box<Self>) -> Box<dyn Any>;
+        fn as_any(&self) -> &dyn Any;
+        fn as_any_mut(&mut self) -> &mut dyn Any;
+    }
 }
 
 /// A marker trait for types that can be emitted .

@@ -6,6 +6,7 @@ authors = ["Swiiz <github.com/Swiiz>"]
 
 [features]
 parallel = ["dep:rayon"]
+state = ["proc_macro/state"]
 default = ["parallel"]
 
 [dependencies]
