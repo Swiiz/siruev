@@ -129,9 +129,8 @@ pub fn event_handler(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);
     let args = parse_macro_input!(attr as HandlerArgs);
     let fn_name = &input_fn.sig.ident;
-    let fn_args = &input_fn.sig.inputs;
 
-    let event_type = match fn_args.first() {
+    let event_type = match input_fn.sig.inputs.first() {
         Some(syn::FnArg::Typed(pat_type)) => pat_type.ty.clone(),
         _ => panic!("Expected a single argument with a reference to event type"),
     };
@@ -238,6 +237,7 @@ impl Parse for HandlerMeta {
 pub fn state_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     if matches!(input.vis, syn::Visibility::Public(_)) && input.generics.params.is_empty() {
         return syn::Error::new_spanned(&input.vis, "State shouldn't be public unless it has generics (dependency injection), use events instead")
@@ -246,7 +246,7 @@ pub fn state_derive(input: TokenStream) -> TokenStream {
     }
 
     quote! {
-       impl siruev::manual::State for #name {
+       impl #impl_generics siruev::manual::State for #name #ty_generics #where_clause {
             fn into_any(self: Box<Self>) -> Box<dyn std::any::Any> { self }
             fn as_any(&self) -> &dyn std::any::Any { self }
             fn as_any_mut(&mut self) -> &mut dyn std::any::Any { self }
