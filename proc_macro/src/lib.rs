@@ -239,8 +239,8 @@ pub fn state_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
 
-    if matches!(input.vis, syn::Visibility::Public(_)) {
-        return syn::Error::new_spanned(&input.vis, "State cannot be public, use events instead")
+    if matches!(input.vis, syn::Visibility::Public(_)) && input.generics.params.is_empty() {
+        return syn::Error::new_spanned(&input.vis, "State shouldn't be public unless it has generics (dependency injection), use events instead")
             .to_compile_error()
             .into();
     }
