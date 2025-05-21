@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    DeriveInput, Expr, ExprAssign, ExprParen, ItemFn, Token, Type,
+    DeriveInput, Expr, ExprAssign, ExprParen, GenericParam, ItemFn, Token, Type,
     parse::{Parse, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
@@ -13,41 +13,61 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let name = &input.ident;
-    let lifetimes: Vec<_> = input
-        .generics
+    let generics = &input.generics;
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+
+    let mut lifetimes = generics.lifetimes();
+
+    let (trait_lifetime, gen_lifetime) = match lifetimes.next() {
+        Some(lt) if lifetimes.next().is_none() => (lt.lifetime.clone(), lt.lifetime.clone()),
+        None => (
+            syn::Lifetime::new("'_", proc_macro2::Span::call_site()),
+            syn::Lifetime::new("'none", proc_macro2::Span::call_site()),
+        ),
+        _ => {
+            return syn::Error::new_spanned(
+                &generics,
+                "Event currently supports at most one lifetime parameter",
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+
+    let only_types = generics
         .params
         .iter()
-        .filter_map(|param| {
-            if let syn::GenericParam::Lifetime(lt_def) = param {
-                Some(&lt_def.lifetime)
-            } else {
-                None
-            }
+        .filter_map(|param| match param {
+            syn::GenericParam::Type(ty) => Some(ty),
+            _ => None,
         })
-        .collect();
+        .collect::<Box<_>>();
 
-    if lifetimes.is_empty() {
-        quote! {
-            impl siruev::Event<'_> for #name {
-                type ForLt = siruev::manual::ForLt!(#name);
-            }
+    //quote only types generics
+    let only_types_generics = (!only_types.is_empty()).then_some(quote! { <#(#only_types),*> });
+
+    let mut where_clause = where_clause.cloned().unwrap_or_else(|| syn::WhereClause {
+        where_token: Default::default(),
+        predicates: Default::default(),
+    });
+    for param in &generics.params {
+        if let GenericParam::Type(ty) = param {
+            let ident = &ty.ident;
+            where_clause
+                .predicates
+                .push(syn::parse_quote!(#ident: 'static));
         }
-        .into()
-    } else if lifetimes.len() == 1 {
-        quote! {
-           impl<'a> siruev::Event<'a> for #name<'a> {
-               type ForLt = siruev::manual::ForLt!(#name<'_>);
-           }
-        }
-        .into()
-    } else {
-        syn::Error::new_spanned(
-            &input.generics,
-            "Event currently supports at most one lifetime parameter",
-        )
-        .to_compile_error()
-        .into()
     }
+
+    quote! {
+        const _: () = {
+            type __Lt #only_types_generics = siruev::manual::ForLt!(<#gen_lifetime> = #name #ty_generics);
+            impl #impl_generics siruev::Event<#trait_lifetime> for #name #ty_generics #where_clause {
+                type ForLt = __Lt #only_types_generics;
+            }
+        };
+    }
+    .into()
 }
 
 /// Marks a function as an event handler for one or more event types.
