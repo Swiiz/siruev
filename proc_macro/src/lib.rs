@@ -245,6 +245,19 @@ pub fn state_derive(input: TokenStream) -> TokenStream {
             .into();
     }
 
+    let mut where_clause = where_clause.cloned().unwrap_or_else(|| syn::WhereClause {
+        where_token: Default::default(),
+        predicates: Default::default(),
+    });
+    for param in &input.generics.params {
+        if let GenericParam::Type(ty) = param {
+            let ident = &ty.ident;
+            where_clause
+                .predicates
+                .push(syn::parse_quote!(#ident: 'static));
+        }
+    }
+
     quote! {
        impl #impl_generics siruev::manual::State for #name #ty_generics #where_clause {
             fn into_any(self: Box<Self>) -> Box<dyn std::any::Any> { self }
