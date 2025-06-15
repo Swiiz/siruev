@@ -274,7 +274,7 @@ mod sealed {
     impl<T: Sync> SyncIfFeature for T {}
 
     #[cfg(not(feature = "parallel"))]
-    pub trait MaybeSyncIfFeature {}
+    pub trait SyncIfFeature {}
     #[cfg(not(feature = "parallel"))]
     impl<T> SyncIfFeature for T {}
 }
