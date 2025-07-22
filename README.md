@@ -1,9 +1,9 @@
 # SIRUEV - **Si**mple **Ru**st **Ev**ents ([Docs](https://swiiz.github.io/siruev))
 
 `siruev` is a simple yet powerful event-system for Rust that enables you to define and handle events
-in a modular way, allowing for minimal coupling. It supports any event event handlers and allows the user to emit
-any events even with lifetime to trigger these handlers. Additionally, it features parallel execution support,
-enabling concurrent handler invocations if the `parallel` feature is enabled.
+in a modular way, allowing for minimal coupling. It supports any event handler type and allows the user
+to emit any event type even with lifetime in order to trigger these handlers. Additionally, it features
+parallel execution support, enabling concurrent handler invocations if the `parallel` feature is enabled.
 
 ## Features
 - **Event Handling**: Define and register event handlers with minimal boilerplate.
